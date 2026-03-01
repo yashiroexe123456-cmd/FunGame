@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Typing Racing Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #sentence {
+      font-size: 22px;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .correct { color: green; }
+    .wrong { color: red; }
+    .pending { color: #555; }
+
+    input {
+      width: 85%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+
+    #stats {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    #track {
+      width: 90%;
+      height: 140px;
+      background: #ddd;
+      margin: 20px auto;
+      position: relative;
+      border-radius: 10px;
+    }
+
+    .car {
+      width: 60px;
+      height: 30px;
+      position: absolute;
+      left: 0;
+      border-radius: 5px;
+    }
+
+    #playerCar { background: red; top: 30px; }
+    #aiCar { background: blue; top: 80px; }
+
+    #finish {
+      position: absolute;
+      right: 10px;
+      top: 0;
+      width: 5px;
+      height: 100%;
+      background: black;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🏁 Typing Racing Game</h1>
+
+  <p id="sentence"></p>
+
+  <input type="text" id="input" placeholder="Type the sentence slowly and carefully..." autofocus>
+
+  <div id="stats">
+    ⚡ Speed: <span id="wpm">0</span> WPM
+  </div>
+
+  <div id="track">
+    <div id="finish"></div>
+    <div id="playerCar" class="car"></div>
+    <div id="aiCar" class="car"></div>
+  </div>
+
+  <h2 id="result"></h2>
+
+  <script>
+    const sentence =
+      "learning to type carefully and accurately will help you build speed and confidence when using a computer";
+
+    const sentenceEl = document.getElementById("sentence");
+    const input = document.getElementById("input");
+    const playerCar = document.getElementById("playerCar");
+    const aiCar = document.getElementById("aiCar");
+    const timeDisplay = document.getElementById("time");
+    const wpmDisplay = document.getElementById("wpm");
+    const result = document.getElementById("result");
+    const track = document.getElementById("track");
+
+    let time = 60;
+    let started = false;
+
+    // Slower movement
+    const trackWidth = track.offsetWidth - 100;
+    const step = trackWidth / sentence.length;
+
+    function renderSentence(typed = "") {
+      sentenceEl.innerHTML = "";
+
+      for (let i = 0; i < sentence.length; i++) {
+        const span = document.createElement("span");
+        span.textContent = sentence[i];
+
+        if (i < typed.length) {
+          span.className =
+            typed[i] === sentence[i] ? "correct" : "wrong";
+        } else {
+          span.className = "pending";
+        }
+
+        sentenceEl.appendChild(span);
+      }
+    }
+
+    renderSentence();
+
+    const timer = setInterval(() => {
+      if (started && time > 0) {
+        time--;
+        timeDisplay.textContent = time;
+      }
+      if (time === 0) {
+        endGame("⏰ Time Up! Computer Wins!");
+      }
+    }, 1000);
+
+    // AI speed
+    const aiSpeed = 0.5;
+    const aiTimer = setInterval(() => {
+      let aiLeft = aiCar.offsetLeft + aiSpeed * 10;
+      aiCar.style.left = aiLeft + "px";
+
+      if (aiLeft >= trackWidth) {
+        endGame("💻 Computer Wins!");
+      }
+    }, 150);
+
+    input.addEventListener("input", () => {
+      if (!started) started = true;
+
+      const typed = input.value;
+      renderSentence(typed);
+
+      if (sentence.startsWith(typed)) {
+        playerCar.style.left = typed.length * step + "px";
+
+        const elapsed = 60 - time;
+        const wpm = elapsed > 0
+          ? Math.round((typed.length / 5) / (elapsed / 60))
+          : 0;
+
+        wpmDisplay.textContent = wpm;
+      }
+
+      if (typed === sentence) {
+        endGame("🎉 You Win! Great Accuracy!");
+      }
+    });
+
+    function endGame(message) {
+      result.textContent = message;
+      input.disabled = true;
+      clearInterval(timer);
+      clearInterval(aiTimer);
+    }
+  </script>
+
+</body>
+</html>
