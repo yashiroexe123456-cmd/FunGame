@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Typing Race - Levels</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body class="game">
+
+<h1>Typing Racing Game 🚗</h1>
+
+<!-- Level Selector -->
+<div class="level-selector">
+    <button onclick="setLevel('easy')" class="level-btn easy">Easy</button>
+    <button onclick="setLevel('medium')" class="level-btn medium">Medium</button>
+    <button onclick="setLevel('hard')" class="level-btn hard">Hard</button>
+</div>
+
+<!-- Score Display -->
+<div class="score-display" id="currentLevel">Level: EASY | Wins: 0 | Losses: 0</div>
+
+<div class="road">
+<div class="lane">
+<div id="playerCar" class="car">🚗</div>
+</div>
+
+<div class="lane">
+<div id="aiCar" class="car">🚙</div>
+</div>
+</div>
+
+<p id="sentence"></p>
+
+<input id="input" placeholder="Start typing..." autocomplete="off">
+
+<div id="endScreen" class="end-screen">
+<h1 id="endMessage"></h1>
+<button onclick="restartGame()">Restart Level</button>
+<a href="index.html">
+<button>Main Menu</button>
+</a>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
