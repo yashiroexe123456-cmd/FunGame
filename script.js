@@ -1,51 +1,38 @@
-// Sentences organized by difficulty level
+// ---------------- SENTENCES ----------------
 const sentences = {
   easy: [
     "practice typing every day to become faster",
     "the quick brown fox jumps over the lazy dog",
-    "coding games are fun to learn",
-    "typing faster helps your car win",
-    "keep practicing to improve your speed",
-    "racing is exciting when you type fast",
-    "javascript makes games interactive",
-    "learning to code opens new opportunities"
+    "coding games are fun to learn"
   ],
-  
   medium: [
-    "practice typing every day to become faster, coding games is a fun way to learn javascript",
-    "the quick brown fox jumps over the lazy dog, typing faster will help your car win the race",
-    "developers need good typing skills to write code efficiently and quickly",
-    "racing games become more exciting when you compete against computer opponents",
-    "javascript programming requires attention to detail and regular practice",
-    "typing accuracy is just as important as speed in this racing game",
-    "the cars move forward based on how correctly you type each sentence"
+    "typing faster will help your car win the race",
+    "developers need good typing skills to write code efficiently"
   ],
-  
   hard: [
-    "advanced typing challenges require precision and speed, especially when racing against artificial intelligence opponents in this exciting game",
-    "javascript developers must master async programming, closures, prototypes, and event loops to build complex web applications",
-    "the quick brown fox jumps over the lazy dog near the river bank while typing champions race to complete sentences faster than ever before",
-    "implementing a level system makes games more engaging by gradually increasing difficulty and rewarding players for their progress",
-    "professional programmers often practice touch typing to improve their workflow and reduce errors when writing complex algorithms",
-    "the artificial intelligence in this game adapts to your skill level, providing a challenging experience for players of all abilities"
+    "advanced typing challenges require precision and speed against artificial intelligence opponents"
   ]
 };
 
-// Game state variables
-let currentLevel = "easy";
+// ---------------- GAME STATE ----------------
+let currentLevel = localStorage.getItem("level") || "easy";
+let wins = Number(localStorage.getItem("wins")) || 0;
+let losses = Number(localStorage.getItem("losses")) || 0;
+
 let sentence = "";
 let playerPos = 0;
 let aiPos = 0;
-let aiTimer = null;
-let aiSpeed = 2;
-let aiInterval = 120;
-let playerSpeed = 10;
-const raceLength = 700; // Finish line position in pixels
-let gameActive = false;
-let wins = 0;
-let losses = 0;
 
-// DOM elements
+let gameActive = true;
+let raceStarted = false;
+
+const raceLength = 700;
+
+// ---------------- AUDIO (ONLY WIN/LOSE) ----------------
+const winSound = new Audio("sounds/win.mp3");
+const loseSound = new Audio("sounds/lose.mp3");
+
+// ---------------- ELEMENTS ----------------
 const sentenceEl = document.getElementById("sentence");
 const input = document.getElementById("input");
 const playerCar = document.getElementById("playerCar");
@@ -53,173 +40,166 @@ const aiCar = document.getElementById("aiCar");
 const endScreen = document.getElementById("endScreen");
 const endMessage = document.getElementById("endMessage");
 const levelDisplay = document.getElementById("currentLevel");
+const nextLevelContainer = document.getElementById("nextLevelContainer");
 
-// Initialize game when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    updateLevelDisplay();
-    gameActive = true;
-    newSentence();
-    startAI();
-});
+// ---------------- LEVEL ORDER ----------------
+const levels = ["easy", "medium", "hard"];
 
-// Update the level and score display
-function updateLevelDisplay() {
-    if (levelDisplay) {
-        levelDisplay.textContent = `Level: ${currentLevel.toUpperCase()} | Wins: ${wins} | Losses: ${losses}`;
-    }
+// ---------------- SAVE DATA ----------------
+function saveData() {
+  localStorage.setItem("wins", wins);
+  localStorage.setItem("losses", losses);
+  localStorage.setItem("level", currentLevel);
 }
 
-// Set game difficulty level
-function setLevel(level) {
-    currentLevel = level;
-    
-    // Adjust game parameters based on level
-    switch(level) {
-        case "easy":
-            aiSpeed = 1.5;      // Slow AI
-            aiInterval = 150;    // Slower updates
-            playerSpeed = 12;    // Faster player progress
-            break;
-        case "medium":
-            aiSpeed = 2.5;       // Medium AI speed
-            aiInterval = 100;     // Normal updates
-            playerSpeed = 10;     // Normal player speed
-            break;
-        case "hard":
-            aiSpeed = 4;          // Fast AI
-            aiInterval = 80;      // Quick updates
-            playerSpeed = 8;      // Slower player progress (need more typing)
-            break;
-    }
-    
-    updateLevelDisplay();
-    restartGame();
+// ---------------- DISPLAY ----------------
+function updateDisplay() {
+  levelDisplay.textContent =
+    `Level: ${currentLevel.toUpperCase()} | Wins: ${wins} | Losses: ${losses}`;
 }
 
-// Get a random sentence for current level
+// ---------------- SENTENCE ----------------
 function newSentence() {
-    const levelSentences = sentences[currentLevel];
-    sentence = levelSentences[Math.floor(Math.random() * levelSentences.length)];
-    sentenceEl.textContent = sentence;
-    input.value = "";
+  const list = sentences[currentLevel];
+  sentence = list[Math.floor(Math.random() * list.length)];
+  sentenceEl.textContent = sentence;
+  input.value = "";
 }
 
-// Check if player has won
-function checkWinCondition() {
-    if (playerPos >= raceLength) {
-        wins++;
-        endScreen.style.display = "block";
-        endMessage.textContent = "🎉 YOU WIN! 🎉";
-        input.disabled = true;
-        gameActive = false;
-        clearInterval(aiTimer);
-        updateLevelDisplay();
-        
-        // Automatically advance to next level after winning
-        setTimeout(function() {
-            if (currentLevel === "easy") {
-                setLevel("medium");
-                endScreen.style.display = "none"; // Hide win screen
-            } else if (currentLevel === "medium") {
-                setLevel("hard");
-                endScreen.style.display = "none"; // Hide win screen
-            } else {
-                // On hard level win, show championship message
-                endMessage.textContent = "🏆 YOU BEAT ALL LEVELS! 🏆";
-                // Add restart button option
-                setTimeout(function() {
-                    if (confirm("Congratulations! Play again?")) {
-                        setLevel("easy");
-                        wins = 0;
-                        losses = 0;
-                        restartGame();
-                    }
-                }, 2000);
-            }
-        }, 1500);
-    }
+// ---------------- WPM ----------------
+let startTime = null;
+
+function getWPM() {
+  if (!startTime) return 0;
+  const minutes = (Date.now() - startTime) / 60000;
+  const words = sentence.split(" ").length;
+  return Math.round(words / minutes);
 }
 
-// Handle typing input
-input.addEventListener("input", function() {
-    if (!gameActive) return;
-    
-    let typed = input.value;
-    
-    // Check if typed text matches the beginning of the sentence
-    if (sentence.startsWith(typed)) {
-        playerPos += playerSpeed;
-        // Prevent car from going past finish line
-        playerCar.style.left = Math.min(playerPos, raceLength) + "px";
-        checkWinCondition();
+// ---------------- AI ----------------
+let aiInterval;
+
+function startAI() {
+  clearInterval(aiInterval);
+
+  aiInterval = setInterval(() => {
+    if (!gameActive || !raceStarted) return;
+
+    aiPos += 2 + Math.random() * 3;
+    aiCar.style.left = aiPos + "px";
+
+    if (aiPos >= raceLength) {
+      loseGame();
     }
-    
-    // If sentence is completed exactly
-    if (typed === sentence) {
-        playerPos = raceLength;
-        playerCar.style.left = raceLength + "px";
-        checkWinCondition();
-    }
+  }, 120);
+}
+
+// ---------------- WIN / LOSE ----------------
+function winGame() {
+  gameActive = false;
+  wins++;
+
+  const wpm = getWPM();
+
+  winSound.play();
+
+  endScreen.style.display = "block";
+  endMessage.textContent = `🎉 YOU WIN! WPM: ${wpm}`;
+
+  showNextLevel();
+
+  saveData();
+  updateDisplay();
+}
+
+function loseGame() {
+  gameActive = false;
+  losses++;
+
+  loseSound.play();
+
+  endScreen.style.display = "block";
+  endMessage.textContent = "💻 COMPUTER WINS!";
+
+  nextLevelContainer.style.display = "none"; 
+
+  saveData();
+  updateDisplay();
+}
+
+// ---------------- NEXT LEVEL ----------------
+function showNextLevel() {
+  if (currentLevel === "hard") return;
+  nextLevelContainer.style.display = "block";
+}
+
+function goToNextLevel() {
+  const index = levels.indexOf(currentLevel);
+  if (index < levels.length - 1) {
+    currentLevel = levels[index + 1];
+  }
+
+  saveData();
+  restartGame();
+}
+
+window.goToNextLevel = goToNextLevel;
+
+// ---------------- INPUT ----------------
+input.addEventListener("input", () => {
+  if (!gameActive) return;
+
+  if (!raceStarted) {
+    raceStarted = true;
+    startTime = Date.now();
+    startAI();
+  }
+
+  const typed = input.value;
+
+  if (sentence.startsWith(typed)) {
+    playerPos += 8;
+    playerCar.style.left = playerPos + "px";
+  }
+
+  if (typed === sentence) {
+    winGame();
+  }
 });
 
-// Start AI opponent movement
-function startAI() {
-    // Clear any existing timer
-    if (aiTimer) {
-        clearInterval(aiTimer);
-    }
-    
-    // Create new AI movement interval
-    aiTimer = setInterval(function() {
-        if (!gameActive) return;
-        
-        aiPos += aiSpeed;
-        // Prevent AI car from going past finish line
-        aiCar.style.left = Math.min(aiPos, raceLength) + "px";
-        
-        // Check if AI wins
-        if (aiPos >= raceLength && gameActive) {
-            losses++;
-            endScreen.style.display = "block";
-            endMessage.textContent = "💻 COMPUTER WINS!";
-            input.disabled = true;
-            gameActive = false;
-            clearInterval(aiTimer);
-            updateLevelDisplay();
-        }
-    }, aiInterval);
-}
-
-// Restart the current level
+// ---------------- RESTART ----------------
 function restartGame() {
-    // Stop AI timer
-    if (aiTimer) {
-        clearInterval(aiTimer);
-    }
-    
-    // Reset positions
-    playerPos = 0;
-    aiPos = 0;
-    
-    // Reset car positions
-    playerCar.style.left = "0px";
-    aiCar.style.left = "0px";
-    
-    // Re-enable input
-    input.disabled = false;
-    input.value = "";
-    
-    // Hide end screen
-    endScreen.style.display = "none";
-    
-    // Activate game
-    gameActive = true;
-    
-    // Get new sentence and restart AI
-    newSentence();
-    startAI();
+  playerPos = 0;
+  aiPos = 0;
+
+  gameActive = true;
+  raceStarted = false;
+
+  startTime = null;
+
+  playerCar.style.left = "0px";
+  aiCar.style.left = "0px";
+
+  endScreen.style.display = "none";
+  nextLevelContainer.style.display = "none";
+
+  newSentence();
+  updateDisplay();
 }
 
-// Make functions available globally for button clicks
+// ---------------- LEVEL CHANGE ----------------
+function setLevel(level) {
+  currentLevel = level;
+  saveData();
+  restartGame();
+}
+
+
 window.setLevel = setLevel;
 window.restartGame = restartGame;
+
+// ---------------- INIT ----------------
+document.addEventListener("DOMContentLoaded", () => {
+  newSentence();
+  updateDisplay();
+});

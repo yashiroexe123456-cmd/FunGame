@@ -9,6 +9,7 @@
 
 <h1>Typing Racing Game 🚗</h1>
 
+
 <!-- Level Selector -->
 <div class="level-selector">
     <button onclick="setLevel('easy')" class="level-btn easy">Easy</button>
@@ -16,29 +17,45 @@
     <button onclick="setLevel('hard')" class="level-btn hard">Hard</button>
 </div>
 
-<!-- Score Display -->
-<div class="score-display" id="currentLevel">Level: EASY | Wins: 0 | Losses: 0</div>
+<!-- Score -->
+<div class="score-display" id="currentLevel">
+Level: EASY | Wins: 0 | Losses: 0
+</div>
 
 <div class="road">
-<div class="lane">
-<div id="playerCar" class="car">🚗</div>
-</div>
+    <div class="lane">
+        <div id="playerCar" class="car">🚗</div>
+    </div>
 
-<div class="lane">
-<div id="aiCar" class="car">🚙</div>
-</div>
+    <div class="lane">
+        <div id="aiCar" class="car">🚙</div>
+    </div>
 </div>
 
 <p id="sentence"></p>
 
 <input id="input" placeholder="Start typing..." autocomplete="off">
 
+<!-- END SCREEN -->
 <div id="endScreen" class="end-screen">
-<h1 id="endMessage"></h1>
-<button onclick="restartGame()">Restart Level</button>
-<a href="index.html">
-<button>Main Menu</button>
-</a>
+    <h1 id="endMessage"></h1>
+
+    <!-- NEXT LEVEL -->
+    <div id="nextLevelContainer" style="display:none;">
+        <button onclick="goToNextLevel()">⬆️ Next Level</button>
+    </div>
+
+    <!-- RESTART -->
+    <button onclick="restartGame()">🔄 Restart Level</button>
+
+   
+</div>
+
+<!-- MENU BUTTON -->
+<div class="menu-button-container">
+    <a href="index.html" class="main-menu-btn">
+        🏠 Main Menu
+    </a>
 </div>
 
 <script src="script.js"></script>
